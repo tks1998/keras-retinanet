@@ -295,6 +295,8 @@ def create_generators(args, preprocess_image):
             **common_args
         )
     elif args.dataset_type == 'csv':
+
+        print("train csv step")
         train_generator = CSVGenerator(
             args.annotations,
             args.classes,
@@ -302,7 +304,7 @@ def create_generators(args, preprocess_image):
             visual_effect_generator=visual_effect_generator,
             **common_args
         )
-
+        print("val anotations step")
         if args.val_annotations:
             validation_generator = CSVGenerator(
                 args.val_annotations,
@@ -481,7 +483,7 @@ def main(args=None):
 
     # create the generators
     train_generator, validation_generator = create_generators(args, backbone.preprocess_image)
-
+    print("Done train valid generate")
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
