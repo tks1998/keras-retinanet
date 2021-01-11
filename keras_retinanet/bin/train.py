@@ -120,7 +120,7 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0,
     prediction_model = retinanet_bbox(model=model, anchor_params=anchor_params, pyramid_levels=pyramid_levels)
 
     # compile model
-    if optimize_type =='Adam'
+    if optimize_type =='Adam':
         training_model.compile(
             loss={
                 'regression'    : losses.smooth_l1(),
