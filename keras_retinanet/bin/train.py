@@ -23,6 +23,7 @@ import warnings
 
 from tensorflow import keras
 import tensorflow as tf
+from keras_radam import RAdam
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
@@ -75,7 +76,7 @@ def model_with_weights(model, weights, skip_mismatch):
 
 
 def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0,
-                  freeze_backbone=False, lr=1e-5, optimizer_clipnorm=0.001, config=None):
+                  freeze_backbone=False, lr=1e-5, optimize_type='Adam', optimizer_clipnorm=0.001, config=None):
     """ Creates three models (model, training_model, prediction_model).
 
     Args
@@ -119,14 +120,22 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0,
     prediction_model = retinanet_bbox(model=model, anchor_params=anchor_params, pyramid_levels=pyramid_levels)
 
     # compile model
-    training_model.compile(
-        loss={
-            'regression'    : losses.smooth_l1(),
-            'classification': losses.focal()
-        },
-        optimizer=keras.optimizers.Adam(lr=lr, clipnorm=optimizer_clipnorm)
-    )
-
+    if optimize_type =='Adam'
+        training_model.compile(
+            loss={
+                'regression'    : losses.smooth_l1(),
+                'classification': losses.focal()
+            },
+            optimizer=keras.optimizers.Adam(lr=lr, clipnorm=optimizer_clipnorm)
+        )
+    else:
+        training_model.compile(
+            loss={
+                'regression': losses.smooth_l1(),
+                'classification': losses.focal()
+            },
+            optimizer=RAdam(total_steps=10000, warmup_proportion=0.1, min_lr=1e-5)
+        )
     return model, training_model, prediction_model
 
 
@@ -378,7 +387,7 @@ def check_args(parsed_args):
     if parsed_args.multi_gpu > 1 and parsed_args.snapshot:
         raise ValueError(
             "Multi GPU training ({}) and resuming from snapshots ({}) is not supported.".format(parsed_args.multi_gpu,
-                                                                                                parsed_args.snapshot))
+                                                                                                                                                                               parsed_args.snapshot))
 
     if parsed_args.multi_gpu > 1 and not parsed_args.multi_gpu_force:
         raise ValueError("Multi-GPU support is experimental, use at own risk! Run with --multi-gpu-force if you wish to continue.")
@@ -429,6 +438,7 @@ def parse_args(args):
     parser.add_argument('--backbone',         help='Backbone model used by retinanet.', default='resnet50', type=str)
     parser.add_argument('--batch-size',       help='Size of the batches.', default=1, type=int)
     parser.add_argument('--gpu',              help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--optimize', help='optimizer Adam or Radam',default='Adam')
     parser.add_argument('--multi-gpu',        help='Number of GPUs to use for parallel processing.', type=int, default=0)
     parser.add_argument('--multi-gpu-force',  help='Extra flag needed to enable (experimental) multi-gpu support.', action='store_true')
     parser.add_argument('--initial-epoch',    help='Epoch from which to begin the train, useful if resuming from snapshot.', type=int, default=0)
@@ -511,6 +521,7 @@ def main(args=None):
             multi_gpu=args.multi_gpu,
             freeze_backbone=args.freeze_backbone,
             lr=args.lr,
+            optimize_type = args.optimize,
             optimizer_clipnorm=args.optimizer_clipnorm,
             config=args.config
         )
