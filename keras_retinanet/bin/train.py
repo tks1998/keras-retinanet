@@ -134,7 +134,7 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0,
                 'regression': losses.smooth_l1(),
                 'classification': losses.focal()
             },
-            optimizer=RAdam(total_steps=10000, warmup_proportion=0.1, min_lr=1e-5, name='testing radam')
+            optimizer=RAdam(total_steps=10000, warmup_proportion=0.1, min_lr=1e-5, name='RectifiedAdam')
         )
     return model, training_model, prediction_model
 
